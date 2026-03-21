@@ -1,14 +1,32 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import List, Optional
 
-class UserBase(BaseModel):
-    username: str
-    email: str
+class MessageBase(BaseModel):
+    content: str
 
-class UserCreate(UserBase):
-    password: str
+class MessageCreate(MessageBase):
+    session_id: int
 
-class User(UserBase):
+class Message(MessageBase):
     id: int
+    session_id: int
+    timestamp: datetime
 
     class Config:
         from_attributes = True
+
+class ChatSessionBase(BaseModel):
+    user_id: int
+
+class ChatSession(ChatSessionBase):
+    id: int
+    start_time: datetime
+    end_time: datetime
+    is_expired: bool
+    messages: List[Message] = []
+
+    class Config:
+        from_attributes = True
+
+# Keep your existing User schemas below...
