@@ -11,6 +11,16 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
+def create_message(db: Session, message: schemas.MessageCreate):
+    db_message = models.Message(
+        content=message.content,
+        session_id=message.session_id
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
 def create_chat_session(db: Session, user_id: int):
     db_session = models.ChatSession(user_id=user_id)
     db.add(db_session)
