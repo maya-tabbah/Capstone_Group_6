@@ -5,14 +5,13 @@ from typing import List, Optional
 # --- User Schemas ---
 class UserBase(BaseModel):
     username: str
+    email: Optional[str] = None
 
 class UserCreate(UserBase):
-    # Added to fix the AttributeError
-    pass 
+    password: str
 
 class User(UserBase):
     id: int
-    is_active: bool
 
     class Config:
         from_attributes = True

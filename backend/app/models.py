@@ -7,6 +7,8 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=True) 
+    password = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     
     # Relationship: A user can be in many sessions
