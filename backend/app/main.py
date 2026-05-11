@@ -48,7 +48,7 @@ class ConnectionManager:
         return None
 
     async def start_session_timer(self, session_id: int):
-        await asyncio.sleep(1200) 
+        await asyncio.sleep(180) 
         await self.send_to_session("SESSION_EXPIRED", session_id)
         print(f"DEBUG: Session {session_id} has expired.")
 
