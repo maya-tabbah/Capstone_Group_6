@@ -19,8 +19,7 @@ class ChatSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     start_time = Column(DateTime, default=datetime.utcnow)
-    # The 'end_time' will be start_time + 20 minutes
-    end_time = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(minutes=20))
+    end_time = Column(DateTime)
     is_expired = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="sessions")

@@ -37,7 +37,9 @@ export default function Chat() {
       // Handle timer synchronization
       if (message.type === "system") {
         const remaining = parseInt(message.content);
-        setTimeLeft(remaining);
+        if (!isNaN(remaining)) {
+          setTimeLeft(remaining);
+        }
         return;
       }
 
