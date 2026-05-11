@@ -23,22 +23,24 @@ export default function Chat() {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [isStrangerTyping, setIsStrangerTyping] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const SESSION_DURATION = 1200; 
+  const [timeLeft, setTimeLeft] = useState(1200);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStrangerTyping]);
 
   useEffect(() => {
-    websocketService.onConnectionStatusChange((status) => {
-      setConnectionStatus(status === "connected" ? "connected" :
-                         status === "connecting" ? "connecting" :
-                         status === "error" ? "error" : "disconnected");
-    });
-
     websocketService.onMessageReceived((message) => {
+      // Handle timer synchronization
+      if (message.type === "system") {
+        const remaining = parseInt(message.content);
+        setTimeLeft(remaining);
+        return;
+      }
+
       if (message.type === "session_expired") {
         setSessionExpired(true);
         toast.error("Session has expired");
@@ -53,6 +55,12 @@ export default function Chat() {
         status: "delivered" as MessageStatusType,
       };
       setMessages(prev => [...prev, newMessage]);
+    });
+
+    websocketService.onConnectionStatusChange((status) => {
+      setConnectionStatus(status === "connected" ? "connected" :
+                         status === "connecting" ? "connecting" :
+                         status === "error" ? "error" : "disconnected");
     });
 
     websocketService.onErrorOccurred((error) => {
@@ -159,7 +167,7 @@ export default function Chat() {
 
           <div className="flex items-center gap-2">
             <SessionTimer
-              duration={SESSION_DURATION}
+              duration={timeLeft}
               onExpire={handleSessionExpire}
               onWarning={handleSessionWarning}
               warningThreshold={60}

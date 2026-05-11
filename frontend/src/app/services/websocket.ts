@@ -95,6 +95,11 @@ class WebSocketService {
 
         try {
           const data = JSON.parse(event.data);
+
+          if (data.type === "timer_sync") {
+            this.onMessage?.({ type: "system", content: data.remaining_seconds.toString() });
+            return;
+          }
           
           if (data.clientId === this.currentUserId) {
             return;

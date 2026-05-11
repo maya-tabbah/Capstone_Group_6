@@ -17,6 +17,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+SESSION_DURATION = 180 # 3 minutes for testing, change to 1200 for 20 minutes
+
 @app.get("/")
 def read_root():
     return {"message": "Persona Backend is live with WebSockets"}
@@ -36,10 +38,10 @@ class ConnectionManager:
             user1 = self.waiting_room.pop(0)
             user2 = self.waiting_room.pop(0)
 
-            new_session = crud.create_chat_session(db, user1['user_id'])
+            new_session = crud.create_chat_session(db, user1['user_id'], SESSION_DURATION)
             session_id = new_session.id
 
-            match_data = {"event": "matched", "session_id": session_id}
+            match_data = {"event": "matched", "session_id": session_id, "duration": SESSION_DURATION}
             await user1['ws'].send_json(match_data)
             await user2['ws'].send_json(match_data)
             
@@ -48,9 +50,18 @@ class ConnectionManager:
         return None
 
     async def start_session_timer(self, session_id: int):
-        await asyncio.sleep(180) 
-        await self.send_to_session("SESSION_EXPIRED", session_id)
-        print(f"DEBUG: Session {session_id} has expired.")
+        await asyncio.sleep(SESSION_DURATION) 
+        # Open a fresh DB connection for the background task
+        db = SessionLocal()
+        try:
+            # 1. Update the 'is_expired' flag in Supabase
+            crud.set_session_expired(db, session_id)
+            
+            # 2. Notify all connected users in the room
+            await self.send_to_session("SESSION_EXPIRED", session_id)
+            print(f"DEBUG: Session {session_id} has expired in DB and broadcasted.")
+        finally:
+            db.close()
 
     async def connect(self, websocket: WebSocket, session_id: int):
         await websocket.accept()
@@ -99,12 +110,23 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int, client_id: i
     await manager.connect(websocket, session_id)
     db = SessionLocal()
     try:
+        session = db.query(models.ChatSession).filter(models.models.ChatSession.id == session_id).first()
+        if session:
+            now = datetime.now(timezone.utc)
+            # Ensure the end_time is timezone-aware for the subtraction
+            expiry = session.end_time.replace(tzinfo=timezone.utc)
+            remaining = int((expiry - now).total_seconds())
+            
+            # Send sync event so the frontend timer matches the backend exactly
+            await websocket.send_json({
+                "type": "timer_sync",
+                "remaining_seconds": max(0, remaining)
+            })
+
         while True:
             data = await websocket.receive_text()
-            
             new_msg = schemas.MessageCreate(content=data, session_id=session_id)
             crud.create_message(db, new_msg)
-            
             await manager.send_to_session(data, session_id)
             
     except WebSocketDisconnect:

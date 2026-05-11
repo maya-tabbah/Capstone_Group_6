@@ -25,11 +25,18 @@ def create_message(db: Session, message: schemas.MessageCreate):
     db.refresh(db_message)
     return db_message
 
-def create_chat_session(db: Session, user_id: int):
-    # Set expiration for 20 minutes from now
-    expire_at = datetime.now(timezone.utc) + timedelta(minutes=20)
+def create_chat_session(db: Session, user_id: int, duration_seconds: int):
+    expire_at = datetime.now(timezone.utc) + timedelta(seconds=duration_seconds)
     db_session = models.ChatSession(user_id=user_id, end_time=expire_at, is_expired=False)
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
     return db_session
+
+def set_session_expired(db: Session, session_id: int):
+    session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()
+    if session:
+        session.is_expired = True
+        db.commit()
+        db.refresh(session)
+    return session
