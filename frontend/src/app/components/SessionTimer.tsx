@@ -19,6 +19,15 @@ export function SessionTimer({
   const [hasExpired, setHasExpired] = useState(false);
 
   useEffect(() => {
+    setTimeLeft(duration);
+    // Reset status if a new duration is provided (e.g. on refresh)
+    if (duration > 0) {
+      setHasExpired(false);
+      setIsWarning(duration <= warningThreshold);
+    }
+  }, [duration, warningThreshold]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {

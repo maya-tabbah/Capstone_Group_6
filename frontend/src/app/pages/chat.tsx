@@ -24,7 +24,7 @@ export default function Chat() {
   const [isStrangerTyping, setIsStrangerTyping] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  const [timeLeft, setTimeLeft] = useState(1200);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
