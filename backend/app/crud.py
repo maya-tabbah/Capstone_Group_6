@@ -18,7 +18,8 @@ def create_user(db: Session, user: schemas.UserCreate):
 def create_message(db: Session, message: schemas.MessageCreate):
     db_message = models.Message(
         content=message.content,
-        session_id=message.session_id
+        session_id=message.session_id,
+        sender_id=message.sender_id
     )
     db.add(db_message)
     db.commit()
@@ -40,3 +41,6 @@ def set_session_expired(db: Session, session_id: int):
         db.commit()
         db.refresh(session)
     return session
+
+def get_messages_by_session(db: Session, session_id: int):
+    return db.query(models.Message).filter(models.Message.session_id == session_id).order_by(models.Message.timestamp.asc()).all()

@@ -29,6 +29,7 @@ class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("chat_sessions.id"))
+    sender_id = Column(Integer)
     content = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
 

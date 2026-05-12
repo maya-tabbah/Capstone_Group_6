@@ -29,6 +29,40 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        // Use your backend URL (localhost or Render)
+        const baseUrl = import.meta.env.VITE_BACKEND_URL ? `https://${import.meta.env.VITE_BACKEND_URL}` : "http://127.0.0.1:8000";
+        const response = await fetch(`${baseUrl}/sessions/${sessionId}/messages`);
+        const data = await response.json();
+        
+        // Map database messages to the frontend UI format
+        const history = data.map((msg: any) => ({
+          id: msg.id.toString(),
+          text: msg.content,
+          // If the sender_id in DB matches the current user's ID, it's "user"
+          sender: msg.sender_id.toString() === userId.toString() ? "user" : "stranger",
+          timestamp: new Date(msg.timestamp),
+          status: "delivered"
+        }));
+        
+        setMessages(history);
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+      }
+    };
+
+    fetchHistory(); // Run the fetch
+    
+    // ... existing WebSocket setup logic ...
+    websocketService.connectChat(sessionId, userId);
+
+    return () => {
+      websocketService.disconnect();
+    };
+  }, [sessionId, userId]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStrangerTyping]);
 

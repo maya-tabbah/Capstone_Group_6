@@ -19,6 +19,7 @@ class User(UserBase):
 # --- Message Schemas ---
 class MessageBase(BaseModel):
     content: str
+    sender_id: int
 
 class MessageCreate(MessageBase):
     session_id: int
