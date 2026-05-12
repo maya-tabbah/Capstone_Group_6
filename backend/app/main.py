@@ -1,9 +1,11 @@
 import asyncio
+import json
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from typing import List, Dict
 from . import models, schemas, crud
 from .database import engine, SessionLocal
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -33,7 +35,7 @@ class ConnectionManager:
         self.waiting_room.append({"ws": websocket, "user_id": user_id})
         print(f"DEBUG: User {user_id} added to waiting room. Queue size: {len(self.waiting_room)}")
 
-    async def try_match(self, db: SessionLocal):
+    async def try_match(self, db: SessionLocal): # type: ignore
         if len(self.waiting_room) >= 2:
             user1 = self.waiting_room.pop(0)
             user2 = self.waiting_room.pop(0)
@@ -110,7 +112,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int, client_id: i
     await manager.connect(websocket, session_id)
     db = SessionLocal()
     try:
-        session = db.query(models.ChatSession).filter(models.models.ChatSession.id == session_id).first()
+        session = db.query(models.ChatSession).filter(models.ChatSession.id == session_id).first()
         if session:
             now = datetime.now(timezone.utc)
             # Ensure the end_time is timezone-aware for the subtraction
@@ -125,7 +127,12 @@ async def websocket_endpoint(websocket: WebSocket, session_id: int, client_id: i
 
         while True:
             data = await websocket.receive_text()
-            new_msg = schemas.MessageCreate(content=data, session_id=session_id)
+            try:
+                json_data = json.loads(data)
+                message_text = json_data.get("content", data)
+            except:
+                message_text = data
+            new_msg = schemas.MessageCreate(content=message_text, session_id=session_id)
             crud.create_message(db, new_msg)
             await manager.send_to_session(data, session_id)
             
